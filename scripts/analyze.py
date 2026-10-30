@@ -208,12 +208,19 @@ def valuation(tk: str) -> dict:
 
 def headlines(tk: str, n: int = 5) -> list:
     """Latest Yahoo Finance headlines for a ticker (title, url, source, unix time)."""
-    try:
-        import yfinance as yf
-        raw = yf.Ticker(tk).news or []
-    except Exception as e:
-        print(f"{tk} news failed: {type(e).__name__}")
-        return []
+    import yfinance as yf
+    raw = []
+    for name, fn in (("ticker", lambda: yf.Ticker(tk).news), ("search", lambda: yf.Search(tk, news_count=n * 2).news)):
+        try:
+            raw = fn() or []
+        except Exception as e:
+            print(f"{tk} news via {name} failed: {type(e).__name__}: {e}"[:200])
+        if raw:
+            break
+    if not raw:
+        print(f"{tk} news: none")
+    elif tk == "AAPL":
+        print("news item sample keys:", list(raw[0].keys())[:10], list((raw[0].get("content") or {}).keys())[:12])
     out = []
     for it in raw:
         c = it.get("content") or it
