@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Morning Brief Charts</title>
+<meta name="description" content="กราฟเรียลไทม์และสัญญาณซื้อ-ขาย หุ้น US / SET / ทองคำ ใน Watchlist">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root {
+  --bg: #f3f4f7; --surface: #ffffff; --ink: #141a2b; --muted: #5c6478; --line: #dfe2ea;
+  --gold: #a87a12; --gold-soft: #f6ecd2;
+  --f-display: "Bai Jamjuree", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0e121c; --surface: #171c29; --ink: #e8eaf1; --muted: #9aa1b4; --line: #272e40;
+  --gold: #e2b54a; --gold-soft: #33290f; color-scheme: dark } }
+* { box-sizing: border-box }
+html, body { margin: 0 }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px) }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px 40px; display: grid; gap: 16px }
+header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-end; justify-content: space-between }
+.eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold) }
+h1 { font-family: var(--f-display); font-size: 28px; line-height: 1.15; margin: 0 }
+h2 { font-family: var(--f-display); font-size: 19px; margin: 0 }
+header a { color: var(--gold); font-weight: 600; text-decoration: none; font-size: 14px }
+.tape { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); min-height: 46px }
+.tabs, .chips { display: flex; gap: 6px; flex-wrap: wrap }
+.tab { font: 600 14px var(--f-body); border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 10px; padding: 6px 14px; cursor: pointer }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink) }
+.chip { font: 600 13px var(--f-mono); border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 4px 12px; cursor: pointer }
+.chip[aria-pressed="true"] { border-color: var(--gold); background: var(--gold-soft) }
+.tab:focus-visible, .chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px }
+@media (max-width: 900px) { .stage { grid-template-columns: 1fr } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; min-width: 0 }
+.chart { height: clamp(420px, 62vh, 680px) }
+.gauge { height: 470px }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line) }
+.panel-head .sym { font: 600 15px var(--f-mono) }
+.panel-head a { color: var(--muted); font-size: 13px }
+.scan { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px }
+.scan .panel { height: 430px; display: flex; flex-direction: column }
+.scan .panel > div:last-child { flex: 1; min-height: 0 }
+.placeholder { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px }
+.howto { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 6px }
+.howto ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px }
+.note { font-size: 12px; color: var(--muted) }
+.tradingview-widget-container, .tradingview-widget-container__widget { height: 100%; width: 100% }
+.tradingview-widget-copyright { display: none }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">US · SET · Gold — Live</div>
+      <h1>Morning Brief Charts</h1>
+    </div>
+    <a href="https://claude.ai/artifact/4unzkMZNtUBNN9k5ri8tmB" target="_blank" rel="noopener">☀️ เปิด Morning Brief รายวัน →</a>
+  </header>
+  <div class="tape" id="tape"></div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="chips" id="chips" role="group" aria-label="เลือกสินทรัพย์"></div>
+  <div class="stage">
+    <div class="panel chart" id="chart"></div>
+    <div class="panel">
+      <div class="panel-head"><span class="sym" id="gaugeSym"></span><span class="note">สัญญาณเทคนิค</span></div>
+      <div class="gauge" id="gauge"></div>
+    </div>
+  </div>
+  <section class="howto">
+    <h2>🚨 อ่านจังหวะซื้อยังไง</h2>
+    <ul>
+      <li><b>Summary = Strong Buy / Buy</b> → แนวโน้มขาขึ้น เหมาะกับจังหวะ Breakout</li>
+      <li><b>Oscillators = Buy</b> แต่ <b>Moving Averages = Sell</b> → ลงลึกจน Oversold เป็นจังหวะ “ทยอยสะสม” สำหรับคนมองยาว</li>
+      <li><b>ทั้งสองฝั่ง Sell / Strong Sell</b> → ขาลงชัด อย่าเพิ่งรับมีด รอ Oscillators กลับเป็น Neutral/Buy</li>
+      <li>ในกราฟใหญ่มี RSI: <b>ต่ำกว่า 30</b> = Oversold · <b>สูงกว่า 70</b> = Overbought</li>
+    </ul>
+    <p class="note">ข้อมูลจาก TradingView ราคาหุ้นไทยอาจล่าช้า ~15 นาที สัญญาณคำนวณอัตโนมัติจากอินดิเคเตอร์ ไม่ใช่คำแนะนำการลงทุน</p>
+  </section>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">
+    <h2 id="scanTitle">📡 สแกนสัญญาณทั้งกลุ่ม</h2>
+    <span class="note">กรอบเวลา 1 วัน (กดเปลี่ยนในแต่ละช่องได้)</span>
+  </div>
+  <div class="scan" id="scan"></div>
+</div>
+<script>
+const GROUPS = {
+  us: { label: "🇺🇸 หุ้น US", items: [
+    ["NASDAQ:GOOGL","GOOGL"],["NASDAQ:INTC","INTC"],["NYSE:DIS","DIS"],["NASDAQ:META","META"],
+    ["NASDAQ:AMD","AMD"],["NASDAQ:AAPL","AAPL"],["NASDAQ:MSFT","MSFT"],["NASDAQ:AMZN","AMZN"]] },
+  th: { label: "🇹🇭 หุ้นไทย", items: [
+    ["SET:KTB","KTB"],["SET:ADVANC","ADVANC"],["SET:KBANK","KBANK"],["SET:PTT","PTT"],["SET:PTTGC","PTTGC"],
+    ["SET:SCB","SCB"],["SET:BBL","BBL"],["SET:PTTEP","PTTEP"],["SET:CPALL","CPALL"],["SET:THAI","THAI"],["SET:STECON","STECON"]] },
+  cmd: { label: "🥇 ทอง / เงิน / ค่าเงิน", items: [
+    ["OANDA:XAUUSD","Gold Spot"],["OANDA:XAGUSD","Silver"],["FX_IDC:USDTHB","USD/THB"]] },
+};
+const THEME = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+const $ = (id) => document.getElementById(id);
+function widget(host, name, cfg) {
+  host.replaceChildren();
+  const box = document.createElement("div"); box.className = "tradingview-widget-container";
+  const inner = document.createElement("div"); inner.className = "tradingview-widget-container__widget";
+  const s = document.createElement("script");
+  s.src = `https://s3.tradingview.com/external-embedding/embed-widget-${name}.js`;
+  s.async = true; s.textContent = JSON.stringify(cfg);
+  box.append(inner, s); host.append(box);
+}
+const ta = (host, symbol) => widget(host, "technical-analysis", {
+  interval: "1D", width: "100%", height: "100%", isTransparent: true, symbol, showIntervalTabs: true,
+  displayMode: "single", locale: "th_TH", colorTheme: THEME });
+widget($("tape"), "ticker-tape", {
+  symbols: Object.values(GROUPS).flatMap((g) => g.items.map(([proName, title]) => ({ proName, title }))),
+  showSymbolLogo: true, isTransparent: true, displayMode: "adaptive", colorTheme: THEME, locale: "th_TH" });
+function select(sym) {
+  const [pro, title] = Object.values(GROUPS).flatMap((g) => g.items).find(([p]) => p === sym);
+  widget($("chart"), "advanced-chart", {
+    autosize: true, symbol: pro, interval: "D", timezone: "Asia/Bangkok", theme: THEME, style: "1",
+    locale: "th_TH", allow_symbol_change: true, hide_side_toolbar: false, calendar: false,
+    studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"], support_host: "https://www.tradingview.com" });
+  $("gaugeSym").textContent = title;
+  ta($("gauge"), pro);
+  for (const c of $("chips").children) c.setAttribute("aria-pressed", String(c.dataset.sym === sym));
+  try { history.replaceState(null, "", "#" + title.replace(/[^A-Za-z]/g, "")); } catch {}
+}
+const io = new IntersectionObserver((entries) => {
+  for (const e of entries) if (e.isIntersecting) { io.unobserve(e.target); ta(e.target, e.target.dataset.sym); }
+}, { rootMargin: "300px" });
+function setGroup(g, pick) {
+  for (const t of $("tabs").children) t.setAttribute("aria-selected", String(t.dataset.g === g));
+  const items = GROUPS[g].items;
+  $("chips").replaceChildren(...items.map(([pro, title]) => {
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "chip"; c.dataset.sym = pro; c.textContent = title;
+    c.addEventListener("click", () => select(pro));
+    return c;
+  }));
+  $("scanTitle").textContent = "📡 สแกนสัญญาณ " + GROUPS[g].label;
+  io.disconnect();
+  $("scan").replaceChildren(...items.map(([pro, title]) => {
+    const p = document.createElement("div"); p.className = "panel";
+    const head = document.createElement("div"); head.className = "panel-head";
+    const name = document.createElement("button"); name.type = "button"; name.className = "chip"; name.textContent = title;
+    name.addEventListener("click", () => { select(pro); scrollTo({ top: 0, behavior: "smooth" }); });
+    const link = document.createElement("a"); link.textContent = "TradingView ↗"; link.target = "_blank"; link.rel = "noopener";
+    link.href = "https://www.tradingview.com/chart/?symbol=" + encodeURIComponent(pro);
+    head.append(name, link);
+    const body = document.createElement("div"); body.dataset.sym = pro;
+    body.innerHTML = '<div class="placeholder">กำลังโหลด…</div>';
+    p.append(head, body); io.observe(body);
+    return p;
+  }));
+  select(pick || items[0][0]);
+}
+$("tabs").replaceChildren(...Object.entries(GROUPS).map(([k, g]) => {
+  const t = document.createElement("button");
+  t.type = "button"; t.className = "tab"; t.role = "tab"; t.dataset.g = k; t.textContent = g.label;
+  t.addEventListener("click", () => setGroup(k));
+  return t;
+}));
+const want = location.hash.slice(1).toUpperCase();
+const hit = want && Object.entries(GROUPS).flatMap(([k, g]) => g.items.map((i) => [k, ...i]))
+  .find(([, , title]) => title.replace(/[^A-Za-z]/g, "").toUpperCase() === want);
+hit ? setGroup(hit[0], hit[1]) : setGroup("us");
+</script>
+</body>
+</html>
