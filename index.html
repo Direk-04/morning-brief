@@ -23,6 +23,7 @@
   --up: #82aba3; --down: #c98f86; --warn: #c4a776; color-scheme: dark } }
 
 * { box-sizing: border-box }
+[hidden] { display: none !important }
 html, body { margin: 0 }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.65;
   padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-font-smoothing: antialiased }
@@ -109,6 +110,21 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
 .scan .bar a { margin-left: auto; color: var(--muted); display: grid; place-items: center }
 .scan .body { flex: 1; min-height: 0 }
 .placeholder { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px }
+.picks { display: grid; gap: 14px }
+.picks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px }
+.pick { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; text-align: left; padding: 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; cursor: pointer; border-left: 3px solid var(--muted) }
+.pick:hover { border-color: var(--accent) }
+.pick.accumulate { border-left-color: var(--up) }
+.pick.strong { border-left-color: var(--warn) }
+.pick.avoid { border-left-color: var(--down) }
+.pick .row { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap }
+.pick .sym { font: 500 14px var(--f-mono) }
+.pick .where { font-size: 12.5px; color: var(--muted) }
+.pick p { margin: 2px 0 0; font-size: 13.5px; color: var(--muted); line-height: 1.55 }
+.badge { font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--line); color: var(--muted) }
+.accumulate .badge { background: var(--accent-soft); color: var(--up) }
+.strong .badge { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn) }
+.avoid .badge { background: color-mix(in srgb, var(--down) 14%, transparent); color: var(--down) }
 .tradingview-widget-container, .tradingview-widget-container__widget { height: 100%; width: 100% }
 .tradingview-widget-copyright { display: none }
 </style>
@@ -135,6 +151,12 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
   </header>
 
   <div class="tape" id="tape"></div>
+
+  <section class="picks" id="picks" hidden>
+    <div class="section-head"><h3 style="margin:0;font-size:17px;font-weight:600">จังหวะน่าสนใจ</h3><p class="note" id="picksTime"></p></div>
+    <div class="picks-grid" id="picksGrid"></div>
+    <p class="note">มุมมองจากข่าวและงบล่าสุดใน Morning Brief ไม่ใช่คำแนะนำการลงทุน เช็คเกจสัญญาณและราคาจริงก่อนซื้อทุกครั้ง</p>
+  </section>
 
   <div class="main">
     <aside>
@@ -361,6 +383,28 @@ $("tabs").replaceChildren(...Object.entries(GROUPS).map(([k, g]) => {
   t.addEventListener("click", () => setGroup(k));
   return t;
 }));
+
+const PICK = { accumulate: "โซนทยอยสะสม", strong: "แข็งแรง รอย่อ", wait: "รอดูก่อน", avoid: "อย่าเพิ่งรับ" };
+fetch("picks.json", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((d) => {
+  if (!d?.items?.length) return;
+  $("picksTime").textContent = "อัปเดต " + d.updated;
+  $("picksGrid").replaceChildren(...d.items.map((p) => {
+    const a = ALL.find((x) => x.sym === p.sym);
+    if (!a) return "";
+    const b = document.createElement("button"); b.type = "button"; b.className = "pick " + (PICK[p.type] ? p.type : "wait");
+    const body = document.createElement("div");
+    const row = document.createElement("div"); row.className = "row";
+    const sym = document.createElement("span"); sym.className = "sym"; sym.textContent = a.sym;
+    const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = PICK[p.type] || PICK.wait;
+    const where = document.createElement("span"); where.className = "where"; where.textContent = p.where || "";
+    const note = document.createElement("p"); note.textContent = p.note;
+    row.append(sym, badge, where); body.append(row, note);
+    b.append(logo(a), body);
+    b.addEventListener("click", () => { setGroup(a.g, a.pro); document.querySelector(".main").scrollIntoView({ behavior: "smooth" }); });
+    return b;
+  }));
+  $("picks").hidden = false;
+}).catch(() => {});
 
 const want = location.hash.slice(1).toUpperCase();
 const hit = want && ALL.find((a) => a.sym === want);
