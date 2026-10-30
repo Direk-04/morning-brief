@@ -130,7 +130,7 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
 .hist { display: grid; gap: 14px }
 .hist-filter { display: flex; gap: 6px; flex-wrap: wrap }
 .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface) }
-table.ana { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 920px }
+table.ana { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 1180px }
 .ana th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap }
 .ana td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle }
 .ana tr:last-child td { border-bottom: 0 }
@@ -148,6 +148,8 @@ table.ana { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
 .sig.overbought, .sig.rebound { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn) }
 .sig.downtrend { background: color-mix(in srgb, var(--down) 14%, transparent); color: var(--down) }
 .spark { display: block }
+.chip-s { font-size: 12px; white-space: nowrap }
+.ana .sub { font-size: 11px; color: var(--muted) }
 .tradingview-widget-container, .tradingview-widget-container__widget { height: 100%; width: 100% }
 .tradingview-widget-copyright { display: none }
 </style>
@@ -188,10 +190,10 @@ table.ana { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
       <div class="mini-seg hist-filter" id="histFilter"></div>
     </div>
     <div class="tablewrap"><table class="ana">
-      <thead><tr><th>สินทรัพย์</th><th class="n">ราคา</th><th>6 เดือน</th><th class="n">1 เดือน</th><th class="n">3 เดือน</th><th class="n">1 ปี</th>
-        <th class="n">RSI</th><th class="n">จากจุดสูงสุด</th><th class="n">แนวรับ / ต้าน</th><th>สัญญาณ</th><th class="n">คะแนน</th><th>เหตุผล</th></tr></thead>
+      <thead><tr><th>สินทรัพย์</th><th>สัญญาณ</th><th class="n">คะแนน</th><th class="n">ราคา</th><th>6 เดือน</th><th class="n">1 เดือน</th><th class="n">3 เดือน</th><th class="n">1 ปี</th>
+        <th class="n">RSI</th><th>MACD</th><th class="n">วอลุ่ม</th><th class="n">P/E</th><th class="n">จากจุดสูงสุด</th><th class="n">แนวรับ / ต้าน</th><th>เหตุผล</th></tr></thead>
       <tbody id="histBody"></tbody></table></div>
-    <p class="note">คำนวณจากราคาปิดรายวันย้อนหลัง 2 ปี: เส้นค่าเฉลี่ย 50/200 วัน, RSI 14 วัน, แนวรับ/ต้านจากกรอบ 3 เดือน และระยะห่างจากจุดสูงสุด 52 สัปดาห์ อัปเดตอัตโนมัติวันละ 2 รอบ (หลังตลาดไทยปิดและหลังตลาด US ปิด) คะแนนสูง = ใกล้จังหวะเข้าที่สมเหตุสมผล ไม่ใช่คำแนะนำการลงทุน</p>
+    <p class="note">คำนวณจากราคาปิดรายวันย้อนหลัง 2 ปี: เส้นค่าเฉลี่ย 50/200 วัน, RSI 14 วัน, MACD (12,26,9), วอลุ่มวันล่าสุดเทียบค่าเฉลี่ย 20 วัน, P/E ย้อนหลังและคาดการณ์ (fwd), แนวรับ/ต้านจากกรอบ 3 เดือน และระยะห่างจากจุดสูงสุด 52 สัปดาห์ อัปเดตอัตโนมัติวันละ 2 รอบ (หลังตลาดไทยปิดและหลังตลาด US ปิด) คะแนนสูง = ใกล้จังหวะเข้าที่สมเหตุสมผล ไม่ใช่คำแนะนำการลงทุน</p>
   </section>
 
   <div class="main">
@@ -462,6 +464,24 @@ function spark(vals) {
   pl.setAttribute("stroke", v[v.length - 1] >= v[0] ? css("--up") : css("--down")); pl.setAttribute("stroke-width", "1.5"); pl.setAttribute("stroke-linejoin", "round");
   svg.append(pl); return svg;
 }
+const MACD = { cross_up: ["ตัดขึ้น", "pos"], bull: ["บวก", "pos"], bear: ["ลบ", "neg"], cross_down: ["ตัดลง", "neg"] };
+function macdCell(x) {
+  const td = document.createElement("td"); const m = MACD[x.macd]; if (!m) { td.textContent = "–"; return td; }
+  const b = document.createElement("span"); b.className = "chip-s " + m[1]; b.textContent = m[0] + (x.macdRising ? " ↑" : " ↓"); td.append(b); return td;
+}
+function volCell(x) {
+  const td = document.createElement("td"); td.className = "n";
+  if (x.volRatio == null) { td.textContent = "–"; return td; }
+  td.textContent = x.volRatio.toFixed(1) + "×";
+  if (x.volState === "buying") td.classList.add("pos"); else if (x.volState === "selling") td.classList.add("neg");
+  td.title = "วอลุ่มวันล่าสุดเทียบค่าเฉลี่ย 20 วัน"; return td;
+}
+function peCell(x) {
+  const td = document.createElement("td"); td.className = "n";
+  td.textContent = x.pe == null ? "–" : x.pe.toFixed(1);
+  if (x.fpe != null) { const f = document.createElement("div"); f.className = "sub"; f.textContent = "fwd " + x.fpe.toFixed(1); td.append(f); }
+  return td;
+}
 function drawHist() {
   const rows = ana.filter((x) => { const a = ALL.find((y) => y.sym === x.sym); return a && (histGroup === "all" || a.g === histGroup); });
   $("histBody").replaceChildren(...rows.map((x) => {
@@ -472,9 +492,9 @@ function drawHist() {
     const sp = td(); sp.append(spark(x.spark));
     const sig = td(); const b = document.createElement("span"); b.className = "sig " + x.signal; b.textContent = x.signalLabel; sig.append(b);
     const sc = td("n"); const sb = document.createElement("span"); sb.className = "score"; sb.textContent = x.signal === "fx" ? "–" : x.score; sc.append(sb);
-    tr.append(asset, td("n", x.cur + fmt(x.price)), sp, pctCell(x.chg1m), pctCell(x.chg3m), pctCell(x.chg1y),
-      td("n", fmt(x.rsi, 0)), td("n", x.fromHigh == null ? "–" : x.fromHigh.toFixed(1) + "%"),
-      td("n", fmt(x.support) + " / " + fmt(x.resistance)), sig, sc, td("why", (x.reasons || []).join(" · ")));
+    tr.append(asset, sig, sc, td("n", x.cur + fmt(x.price)), sp, pctCell(x.chg1m), pctCell(x.chg3m), pctCell(x.chg1y),
+      td("n", fmt(x.rsi, 0)), macdCell(x), volCell(x), peCell(x), td("n", x.fromHigh == null ? "–" : x.fromHigh.toFixed(1) + "%"),
+      td("n", fmt(x.support) + " / " + fmt(x.resistance)), td("why", (x.reasons || []).join(" · ")));
     tr.addEventListener("click", () => { setGroup(a.g, a.pro); document.querySelector(".main").scrollIntoView({ behavior: "smooth" }); });
     return tr;
   }));

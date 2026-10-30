@@ -87,6 +87,36 @@ def analyze(df: pd.DataFrame, is_fx: bool = False) -> dict:
     reasons.append(f"RSI {rsi_now:.0f}" + (" Oversold" if rsi_now < 30 else " Overbought" if rsi_now > 70 else ""))
     reasons.append(f"ห่างจุดสูงสุด 52 สัปดาห์ {dd:.1f}%")
 
+    # MACD 12/26/9
+    macd = c.ewm(span=12, adjust=False).mean() - c.ewm(span=26, adjust=False).mean()
+    macd_sig = macd.ewm(span=9, adjust=False).mean()
+    hist = macd - macd_sig
+    above = hist > 0
+    crossed = above.iloc[-4:].nunique() > 1  # sign flipped within the last 3 sessions
+    if crossed and above.iloc[-1]:
+        macd_state = "cross_up"; reasons.append("MACD เพิ่งตัดขึ้นเหนือเส้นสัญญาณ")
+    elif crossed:
+        macd_state = "cross_down"; reasons.append("MACD เพิ่งตัดลงใต้เส้นสัญญาณ")
+    elif above.iloc[-1]:
+        macd_state = "bull"
+    else:
+        macd_state = "bear"
+    hist_rising = float(hist.iloc[-1]) > float(hist.iloc[-2])
+
+    # Volume vs 20-day average (skipped for FX, which has none)
+    vol_ratio, vol_state = None, None
+    if "Volume" in df and df["Volume"].iloc[-25:].sum() > 0:
+        v = df["Volume"]
+        avg20 = float(v.iloc[-21:-1].mean())
+        if avg20 > 0:
+            vol_ratio = float(v.iloc[-1]) / avg20
+            day_up = float(c.iloc[-1]) >= float(c.iloc[-2])
+            if vol_ratio >= 1.5:
+                vol_state = "buying" if day_up else "selling"
+                reasons.append(f"วอลุ่ม {vol_ratio:.1f} เท่าของค่าเฉลี่ย 20 วัน " + ("แรงซื้อเข้า" if day_up else "แรงขายหนัก"))
+            elif vol_ratio < 0.6:
+                vol_state = "quiet"
+
     if broke_support:
         reasons.insert(0, f"หลุดแนวรับ 3 เดือน {support:,.2f} รอยืนกลับก่อน")
     if last > resistance and 50 <= rsi_now <= 75:
@@ -118,6 +148,8 @@ def analyze(df: pd.DataFrame, is_fx: bool = False) -> dict:
     score += max(-15, min(15, (50 - rsi_now) * 0.6))
     score += 10 if at_support else -8 if broke_support else 0
     score += {"accumulate": 10, "breakout": 8, "rebound": -5, "neutral": 0, "overbought": -10, "downtrend": -15}[sig]
+    score += {"cross_up": 6, "bull": 2, "bear": -2, "cross_down": -6}[macd_state] + (2 if hist_rising else -2)
+    score += {"buying": 5, "selling": -6}.get(vol_state, 0)
     score = int(max(0, min(100, round(score))))
 
     if is_fx:
@@ -135,6 +167,8 @@ def analyze(df: pd.DataFrame, is_fx: bool = False) -> dict:
         "trend": "up" if up_long and golden else "down" if (not math.isnan(s200) and not up_long and not golden) else "mixed",
         "signal": sig, "signalLabel": SIGNALS[sig], "score": score, "reasons": reasons,
         "spark": [num(x) for x in closes.tolist()],
+        "macd": macd_state, "macdHist": num(hist.iloc[-1], 3), "macdRising": hist_rising,
+        "volRatio": num(vol_ratio, 2), "volState": vol_state,
     }
 
 
@@ -145,7 +179,7 @@ def from_yahoo(tk: str) -> pd.DataFrame:
     import yfinance as yf
     df = yf.Ticker(tk).history(period="2y", interval="1d", auto_adjust=True)
     df.index = pd.to_datetime(df.index).tz_localize(None)
-    return df[["High", "Low", "Close"]].dropna()
+    return df[["High", "Low", "Close", "Volume"]].dropna(subset=["Close"])
 
 
 def from_stooq(sym: str, tk: str) -> pd.DataFrame:
@@ -153,7 +187,23 @@ def from_stooq(sym: str, tk: str) -> pd.DataFrame:
     if not code:
         raise ValueError("no stooq symbol")
     df = pd.read_csv(f"https://stooq.com/q/d/l/?s={code}&i=d", parse_dates=["Date"], index_col="Date")
-    return df[["High", "Low", "Close"]].dropna().iloc[-520:]
+    return df[["High", "Low", "Close", "Volume"]].dropna(subset=["Close"]).iloc[-520:]
+
+
+def valuation(tk: str) -> dict:
+    """Trailing / forward P/E and dividend yield from Yahoo; empty when unavailable."""
+    try:
+        import yfinance as yf
+        info = yf.Ticker(tk).info or {}
+    except Exception as e:
+        print(f"{tk} valuation failed: {type(e).__name__}")
+        return {}
+    pe, fpe, dy = info.get("trailingPE"), info.get("forwardPE"), info.get("dividendYield")
+    ok = lambda x: isinstance(x, (int, float)) and math.isfinite(x) and 0 < x < 1000
+    if ok(dy) and dy < 1:  # some versions return a fraction, others a percent
+        dy *= 100
+    return {"pe": num(pe, 1) if ok(pe) else None, "fpe": num(fpe, 1) if ok(fpe) else None,
+            "divYield": num(dy, 2) if ok(dy) else None}
 
 
 def main() -> int:
@@ -174,7 +224,10 @@ def main() -> int:
         if df is None:
             failed.append(sym); print(f"{sym} FAILED: {errors}"); continue
         try:
-            out.append({"sym": sym, "ticker": tk, "cur": cur, **analyze(df, is_fx=sym == "USDTHB")})
+            row = {"sym": sym, "ticker": tk, "cur": cur, **analyze(df, is_fx=sym == "USDTHB")}
+            if "=" not in tk:
+                row.update(valuation(tk))
+            out.append(row)
         except Exception as e:
             failed.append(sym); print(f"{sym} analyze FAILED: {type(e).__name__}: {e}")
 
