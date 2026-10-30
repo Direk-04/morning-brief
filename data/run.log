@@ -311,22 +311,35 @@ GOOGL: 502 rows from yahoo
 INTC: 502 rows from yahoo
 DIS: 502 rows from yahoo
 META: 502 rows from yahoo
+META news: none
 AMD: 502 rows from yahoo
 AAPL: 502 rows from yahoo
+news item sample keys: ['uuid', 'title', 'publisher', 'link', 'providerPublishTime', 'type', 'thumbnail', 'relatedTickers'] []
 MSFT: 502 rows from yahoo
 AMZN: 502 rows from yahoo
 NFLX: 502 rows from yahoo
 KTB: 484 rows from yahoo
+KTB.BK news: none
 ADVANC: 484 rows from yahoo
+ADVANC.BK news: none
 KBANK: 484 rows from yahoo
+KBANK.BK news: none
 PTT: 484 rows from yahoo
+PTT.BK news: none
 PTTGC: 484 rows from yahoo
+PTTGC.BK news: none
 SCB: 484 rows from yahoo
+SCB.BK news: none
 BBL: 484 rows from yahoo
+BBL.BK news: none
 PTTEP: 484 rows from yahoo
+PTTEP.BK news: none
 CPALL: 484 rows from yahoo
+CPALL.BK news: none
 THAI: 484 rows from yahoo
+THAI.BK news: none
 STECON: 484 rows from yahoo
+STECON.BK news: none
 XAUUSD: 504 rows from yahoo
 XAGUSD: 504 rows from yahoo
 USDTHB: 518 rows from yahoo
