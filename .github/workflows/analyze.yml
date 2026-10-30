@@ -22,12 +22,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install --quiet "yfinance>=0.2.54" pandas
-      - run: python scripts/analyze.py
+      - name: Run analysis
+        run: mkdir -p data && python scripts/analyze.py 2>&1 | tee data/run.log
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/analysis.json
+          git add data/run.log $(ls data/analysis.json 2>/dev/null)
           git diff --cached --quiet && exit 0
           git commit -m "Update watchlist analysis"
           git pull --rebase origin main

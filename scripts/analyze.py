@@ -129,27 +129,52 @@ def analyze(df: pd.DataFrame) -> dict:
     }
 
 
-def main() -> int:
-    import yfinance as yf
+STOOQ = {"XAUUSD": "xauusd", "XAGUSD": "xagusd", "USDTHB": "usdthb"}
 
-    tickers = [t for _, t, _ in WATCHLIST]
-    raw = yf.download(tickers, period="2y", interval="1d", group_by="ticker", auto_adjust=True, progress=False, threads=True)
+
+def from_yahoo(tk: str) -> pd.DataFrame:
+    import yfinance as yf
+    df = yf.Ticker(tk).history(period="2y", interval="1d", auto_adjust=True)
+    df.index = pd.to_datetime(df.index).tz_localize(None)
+    return df[["High", "Low", "Close"]].dropna()
+
+
+def from_stooq(sym: str, tk: str) -> pd.DataFrame:
+    code = STOOQ.get(sym) or (tk.lower() + ".us" if "." not in tk and "=" not in tk else None)
+    if not code:
+        raise ValueError("no stooq symbol")
+    df = pd.read_csv(f"https://stooq.com/q/d/l/?s={code}&i=d", parse_dates=["Date"], index_col="Date")
+    return df[["High", "Low", "Close"]].dropna().iloc[-520:]
+
+
+def main() -> int:
+    import time
     out, failed = [], []
     for sym, tk, cur in WATCHLIST:
+        df, errors = None, []
+        for name, fn in (("yahoo", lambda: from_yahoo(tk)), ("yahoo-retry", lambda: (time.sleep(3), from_yahoo(tk))[1]),
+                         ("stooq", lambda: from_stooq(sym, tk))):
+            try:
+                df = fn()
+                if len(df) >= 60:
+                    print(f"{sym}: {len(df)} rows from {name}")
+                    break
+                errors.append(f"{name}: only {len(df)} rows"); df = None
+            except Exception as e:
+                errors.append(f"{name}: {type(e).__name__}: {e}"[:200])
+        if df is None:
+            failed.append(sym); print(f"{sym} FAILED: {errors}"); continue
         try:
-            df = raw[tk][["High", "Low", "Close"]].dropna()
-            if len(df) < 60:
-                raise ValueError(f"only {len(df)} rows")
             out.append({"sym": sym, "ticker": tk, "cur": cur, **analyze(df)})
-        except Exception as e:  # keep going; one bad ticker shouldn't sink the run
-            failed.append(sym)
-            print(f"{sym} ({tk}) failed: {e}", file=sys.stderr)
+        except Exception as e:
+            failed.append(sym); print(f"{sym} analyze FAILED: {type(e).__name__}: {e}")
 
     bkk = timezone(timedelta(hours=7))
     payload = {"generated": datetime.now(bkk).strftime("%Y-%m-%d %H:%M"), "tz": "Asia/Bangkok",
                "lookback": "2y", "failed": failed, "items": sorted(out, key=lambda x: -x["score"])}
-    path = Path(__file__).resolve().parent.parent / "data" / "analysis.json"
-    path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+    if out:
+        path = Path(__file__).resolve().parent.parent / "data" / "analysis.json"
+        path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
     print(f"wrote {len(out)} assets, failed: {failed}")
     return 0 if out else 1
 
