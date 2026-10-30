@@ -29,6 +29,7 @@ SIGNALS = {
     "overbought": "ร้อนแรง รอย่อ",
     "downtrend": "ขาลง อย่าเพิ่งรับ",
     "neutral": "รอดู",
+    "fx": "ค่าเงิน",
 }
 
 
@@ -50,7 +51,7 @@ def num(x, d: int = 2):
     return None if x is None or (isinstance(x, float) and math.isnan(x)) else round(float(x), d)
 
 
-def analyze(df: pd.DataFrame) -> dict:
+def analyze(df: pd.DataFrame, is_fx: bool = False) -> dict:
     """df has High, Low, Close columns indexed by date, oldest first."""
     df = df.dropna(subset=["Close"])
     c, h, l = df["Close"], df["High"], df["Low"]
@@ -76,6 +77,8 @@ def analyze(df: pd.DataFrame) -> dict:
     broke_support = near_support is not None and near_support < 0
     near_s50 = abs(last - s50) / s50 * 100
     dd = (last / hi52 - 1) * 100
+    # Long-term uptrend whose price has dipped up to 5% under a still-rising 200-day line
+    test_200 = not up_long and s200_rising and last >= s200 * 0.95
 
     reasons = []
     if not math.isnan(s200):
@@ -90,7 +93,9 @@ def analyze(df: pd.DataFrame) -> dict:
         sig = "breakout"; reasons.insert(0, f"ทะลุแนวต้าน 3 เดือน {resistance:,.2f}")
     elif rsi_now > 72:
         sig = "overbought"
-    elif (up_long or s200_rising) and not broke_support and (rsi_now < 45 or near_s50 < 3 or at_support):
+    elif test_200 and not broke_support:
+        sig = "accumulate"; reasons.insert(0, f"ย่อมาทดสอบเส้น 200 วัน {s200:,.2f} ที่ยังชี้ขึ้น")
+    elif up_long and not broke_support and (rsi_now < 45 or near_s50 < 3 or at_support):
         sig = "accumulate"
         if at_support:
             reasons.insert(0, f"ย่อใกล้แนวรับ {support:,.2f} (ห่าง {near_support:.1f}%)")
@@ -114,6 +119,10 @@ def analyze(df: pd.DataFrame) -> dict:
     score += 10 if at_support else -8 if broke_support else 0
     score += {"accumulate": 10, "breakout": 8, "rebound": -5, "neutral": 0, "overbought": -10, "downtrend": -15}[sig]
     score = int(max(0, min(100, round(score))))
+
+    if is_fx:
+        sig, score = "fx", 0
+        reasons = [f"ค่าเงินบาท ใช้ประกอบการซื้อทองและหุ้น US · RSI {rsi_now:.0f}", f"กรอบ 3 เดือน {support:,.2f}–{resistance:,.2f}"]
 
     closes = c.iloc[-126:]
     return {
@@ -165,13 +174,13 @@ def main() -> int:
         if df is None:
             failed.append(sym); print(f"{sym} FAILED: {errors}"); continue
         try:
-            out.append({"sym": sym, "ticker": tk, "cur": cur, **analyze(df)})
+            out.append({"sym": sym, "ticker": tk, "cur": cur, **analyze(df, is_fx=sym == "USDTHB")})
         except Exception as e:
             failed.append(sym); print(f"{sym} analyze FAILED: {type(e).__name__}: {e}")
 
     bkk = timezone(timedelta(hours=7))
     payload = {"generated": datetime.now(bkk).strftime("%Y-%m-%d %H:%M"), "tz": "Asia/Bangkok",
-               "lookback": "2y", "failed": failed, "items": sorted(out, key=lambda x: -x["score"])}
+               "lookback": "2y", "failed": failed, "items": sorted(out, key=lambda x: (x["signal"] == "fx", -x["score"]))}
     if out:
         path = Path(__file__).resolve().parent.parent / "data" / "analysis.json"
         path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))

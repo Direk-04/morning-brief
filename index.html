@@ -471,7 +471,7 @@ function drawHist() {
     const asset = td(); const box = document.createElement("div"); box.className = "asset"; box.append(logo(a), a.sym); asset.append(box);
     const sp = td(); sp.append(spark(x.spark));
     const sig = td(); const b = document.createElement("span"); b.className = "sig " + x.signal; b.textContent = x.signalLabel; sig.append(b);
-    const sc = td("n"); const sb = document.createElement("span"); sb.className = "score"; sb.textContent = x.score; sc.append(sb);
+    const sc = td("n"); const sb = document.createElement("span"); sb.className = "score"; sb.textContent = x.signal === "fx" ? "–" : x.score; sc.append(sb);
     tr.append(asset, td("n", x.cur + fmt(x.price)), sp, pctCell(x.chg1m), pctCell(x.chg3m), pctCell(x.chg1y),
       td("n", fmt(x.rsi, 0)), td("n", x.fromHigh == null ? "–" : x.fromHigh.toFixed(1) + "%"),
       td("n", fmt(x.support) + " / " + fmt(x.resistance)), sig, sc, td("why", (x.reasons || []).join(" · ")));
