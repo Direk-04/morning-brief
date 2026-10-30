@@ -126,6 +126,25 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
 .accumulate .badge { background: var(--accent-soft); color: var(--up) }
 .strong .badge { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn) }
 .avoid .badge { background: color-mix(in srgb, var(--down) 14%, transparent); color: var(--down) }
+/* Why-it-moved panel for the selected asset */
+.why-card { padding: 20px 22px; display: grid; gap: 18px }
+.why-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: baseline }
+.why-head h3 { margin: 0; font-size: 16px; font-weight: 600 }
+.moves { display: flex; gap: 6px; flex-wrap: wrap }
+.move { font: 500 12px var(--f-mono); padding: 2px 8px; border-radius: 6px; background: var(--bg); color: var(--muted) }
+.move b { font-weight: 500 } .move.pos b { color: var(--up) } .move.neg b { color: var(--down) }
+.why-lead { margin: 0; font-size: 15px; line-height: 1.7; max-width: 75ch; text-wrap: pretty }
+.why-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 24px }
+.why-col h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px }
+.why-col.up h4 { color: var(--up) } .why-col.down h4 { color: var(--down) } .why-col.watch h4, .why-col.tech h4 { color: var(--muted) }
+.why-col ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; font-size: 13.5px; line-height: 1.6 }
+.why-col li::marker { color: var(--muted) }
+.why-col ul.news-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none }
+.news-list a { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); text-decoration: none; font-size: 13.5px }
+.news-list a:hover span:first-child { text-decoration: underline; text-underline-offset: 3px }
+.news-list .meta { color: var(--muted); font-size: 12px; white-space: nowrap }
+.why-src { font-size: 12px; color: var(--muted); margin: 0 }
+.why-src a { color: var(--muted) }
 /* History analysis table */
 .hist { display: grid; gap: 14px }
 .hist-filter { display: flex; gap: 6px; flex-wrap: wrap }
@@ -218,6 +237,8 @@ table.ana { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
         </div>
         <div class="chart" id="chart"></div>
       </div>
+
+      <section class="card why-card" id="why" hidden></section>
 
       <div class="pair">
         <div class="card gauge" id="gauge"></div>
@@ -348,6 +369,60 @@ function drawChart() {
     studies: opt.rsi ? ["RSI@tv-basicstudies"] : [], support_host: "https://www.tradingview.com" });
 }
 
+// "Why it moved" panel: Claude's written analysis + numbers and headlines from the daily run
+const INSIGHTS_URL = "https://raw.githubusercontent.com/Direk-04/morning-brief/main/data/insights.json";
+let insights = null;
+fetch(INSIGHTS_URL, { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((d) => { insights = d; if (current) renderWhy(); }).catch(() => {});
+const el2 = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+function whyCol(cls, iconId, title, items) {
+  if (!items?.length) return null;
+  const c = el2("div", "why-col " + cls); const h = el2("h4"); h.append(icon(iconId, 15), title);
+  const ul = el2("ul"); for (const t of items) ul.append(el2("li", null, t));
+  c.append(h, ul); return c;
+}
+function ago(t) {
+  if (!t) return ""; const h = (Date.now() / 1000 - t) / 3600;
+  return h < 1 ? "เมื่อสักครู่" : h < 24 ? Math.round(h) + " ชม.ที่แล้ว" : Math.round(h / 24) + " วันที่แล้ว";
+}
+function renderWhy() {
+  const box = $("why"), a = ALL.find((x) => x.pro === current); if (!a) return;
+  const ins = insights?.items?.[a.sym], an = ana.find((x) => x.sym === a.sym);
+  if (!ins && !an) { box.hidden = true; return; }
+  const head = el2("div", "why-head"); head.append(el2("h3", null, "ทำไม " + a.sym + " ขึ้นหรือลง"));
+  if (an) {
+    const m = el2("div", "moves");
+    for (const [k, label] of [["chg1d", "1 วัน"], ["chg1m", "1 เดือน"], ["chg3m", "3 เดือน"], ["chg1y", "1 ปี"]]) {
+      const v = an[k]; if (v == null) continue;
+      const chip = el2("span", "move " + (v > 0 ? "pos" : v < 0 ? "neg" : "")); chip.append(label + " ", el2("b", null, (v > 0 ? "+" : "") + v.toFixed(1) + "%")); m.append(chip);
+    }
+    head.append(m);
+  }
+  const parts = [head];
+  if (ins?.headline) parts.push(el2("p", "why-lead", ins.headline));
+  const cols = el2("div", "why-cols");
+  for (const c of [whyCol("down", "i-down", "ปัจจัยกดดัน", ins?.down), whyCol("up", "i-up", "ปัจจัยหนุน", ins?.up),
+                   whyCol("tech", "i-gauge", "ภาพจากกราฟย้อนหลัง", an?.reasons), whyCol("watch", "i-wave", "สิ่งที่ต้องจับตา", ins?.watch)]) if (c) cols.append(c);
+  parts.push(cols);
+  if (an?.news?.length) {
+    const wrap = el2("div", "why-col"); const h = el2("h4"); h.append(icon("i-out", 15), "ข่าวล่าสุด"); h.style.color = "var(--muted)";
+    const ul = el2("ul", "news-list");
+    for (const n of an.news) {
+      const li = el2("li"), link = el2("a"); link.href = n.url; link.target = "_blank"; link.rel = "noopener";
+      link.append(el2("span", null, n.title), el2("span", "meta", [n.source, ago(n.time)].filter(Boolean).join(" · ")));
+      li.append(link); ul.append(li);
+    }
+    wrap.append(h, ul); parts.push(wrap);
+  }
+  if (ins?.sources?.length) {
+    const p = el2("p", "why-src", "อ้างอิง: ");
+    ins.sources.forEach(([t, u], i) => { const l = el2("a", null, t); l.href = u; l.target = "_blank"; l.rel = "noopener"; if (i) p.append(" · "); p.append(l); });
+    parts.push(p);
+  }
+  const note = el2("p", "why-src", "บทวิเคราะห์อัปเดต " + (insights?.updated || "–") + " · ไม่ใช่คำแนะนำการลงทุน");
+  parts.push(note);
+  box.replaceChildren(...parts); box.hidden = false;
+}
+
 function select(pro) {
   const a = ALL.find((x) => x.pro === pro);
   current = pro;
@@ -356,6 +431,7 @@ function select(pro) {
   ta($("gauge"), pro);
   for (const b of $("list").querySelectorAll(".item")) b.setAttribute("aria-pressed", String(b.dataset.pro === pro));
   try { history.replaceState(null, "", "#" + a.sym); } catch {}
+  renderWhy();
 }
 
 let view = "mini", group = "us";
@@ -511,6 +587,7 @@ fetch(DATA_URL, { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then(
   }));
   drawHist();
   $("hist").hidden = false;
+  renderWhy();
 }).catch(() => {});
 
 const want = location.hash.slice(1).toUpperCase();

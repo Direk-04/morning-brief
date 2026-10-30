@@ -206,6 +206,33 @@ def valuation(tk: str) -> dict:
             "divYield": num(dy, 2) if ok(dy) else None}
 
 
+def headlines(tk: str, n: int = 5) -> list:
+    """Latest Yahoo Finance headlines for a ticker (title, url, source, unix time)."""
+    try:
+        import yfinance as yf
+        raw = yf.Ticker(tk).news or []
+    except Exception as e:
+        print(f"{tk} news failed: {type(e).__name__}")
+        return []
+    out = []
+    for it in raw:
+        c = it.get("content") or it
+        title = c.get("title")
+        url = (c.get("canonicalUrl") or {}).get("url") or (c.get("clickThroughUrl") or {}).get("url") or c.get("link")
+        src = (c.get("provider") or {}).get("displayName") or c.get("publisher") or ""
+        t = c.get("pubDate") or c.get("providerPublishTime")
+        if isinstance(t, str):
+            try:
+                t = int(datetime.fromisoformat(t.replace("Z", "+00:00")).timestamp())
+            except ValueError:
+                t = None
+        if title and url:
+            out.append({"title": title, "url": url, "source": src, "time": t})
+        if len(out) >= n:
+            break
+    return out
+
+
 def main() -> int:
     import time
     out, failed = [], []
@@ -229,6 +256,7 @@ def main() -> int:
             row = {"sym": sym, "ticker": tk, "cur": cur, **analyze(df, is_fx=sym == "USDTHB")}
             if "=" not in tk:
                 row.update(valuation(tk))
+            row["news"] = headlines(tk)
             out.append(row)
         except Exception as e:
             failed.append(sym); print(f"{sym} analyze FAILED: {type(e).__name__}: {e}")
