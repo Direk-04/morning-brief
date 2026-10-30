@@ -224,6 +224,8 @@ def main() -> int:
         if df is None:
             failed.append(sym); print(f"{sym} FAILED: {errors}"); continue
         try:
+            if "=" in tk:  # futures/FX volume jumps at contract rolls, so it is not comparable day to day
+                df = df.drop(columns=["Volume"], errors="ignore")
             row = {"sym": sym, "ticker": tk, "cur": cur, **analyze(df, is_fx=sym == "USDTHB")}
             if "=" not in tk:
                 row.update(valuation(tk))
