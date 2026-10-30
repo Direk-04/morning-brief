@@ -76,7 +76,13 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
 .head .link { margin-left: auto }
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; min-width: 0 }
-.chart { height: clamp(420px, 60vh, 640px) }
+.chartcard { display: grid; grid-template-rows: auto 1fr }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line) }
+.mini-seg { display: inline-flex; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 2px; gap: 2px }
+.mini-seg button { border: 0; background: transparent; padding: 3px 10px; border-radius: 6px; font-size: 12.5px; color: var(--muted); cursor: pointer }
+.mini-seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .06) }
+.tools .spacer { flex: 1 }
+.chart { height: clamp(380px, 56vh, 600px) }
 .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px }
 @media (max-width: 760px) { .pair { grid-template-columns: 1fr } }
 .gauge { height: 450px }
@@ -95,6 +101,8 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
 .section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap }
 .scan { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px }
 .scan .card { height: 420px; display: flex; flex-direction: column }
+.scan.minis .card { height: 250px }
+.scan.minis .body { padding: 4px 6px 0 }
 .scan .bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line) }
 .scan .bar button { border: 0; background: none; padding: 0; display: flex; align-items: center; gap: 10px; cursor: pointer; font: 500 14px var(--f-mono) }
 .scan .bar .logo { width: 24px; height: 24px; font-size: 10px }
@@ -141,7 +149,15 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
         <a class="link" id="hLink" target="_blank" rel="noopener">เปิดใน TradingView <svg width="14" height="14"><use href="#i-out"/></svg></a>
       </div>
 
-      <div class="card chart" id="chart"></div>
+      <div class="card chartcard">
+        <div class="tools">
+          <div class="mini-seg" id="range" aria-label="ช่วงเวลา"></div>
+          <span class="spacer"></span>
+          <div class="mini-seg" id="style" aria-label="รูปแบบกราฟ"></div>
+          <div class="mini-seg"><button type="button" id="rsi" aria-pressed="false">RSI</button></div>
+        </div>
+        <div class="chart" id="chart"></div>
+      </div>
 
       <div class="pair">
         <div class="card gauge" id="gauge"></div>
@@ -154,13 +170,14 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
           <div class="rule down"><span class="ic"><svg width="18" height="18"><use href="#i-down"/></svg></span>
             <div><b>ทั้งสองฝั่งเป็น Sell</b><span>ขาลงชัดเจน รอให้ Oscillators กลับมาเป็น Neutral หรือ Buy ก่อน</span></div></div>
           <div class="rule"><span class="ic"><svg width="18" height="18"><use href="#i-gauge"/></svg></span>
-            <div><b>RSI ในกราฟด้านบน</b><span>ต่ำกว่า 30 คือ Oversold สูงกว่า 70 คือ Overbought</span></div></div>
+            <div><b>RSI (กดปุ่ม RSI บนกราฟ)</b><span>ต่ำกว่า 30 คือ Oversold สูงกว่า 70 คือ Overbought</span></div></div>
           <p class="note">ข้อมูลจาก TradingView หุ้นไทยอาจล่าช้าราว 15 นาที สัญญาณคำนวณอัตโนมัติจากอินดิเคเตอร์ ไม่ใช่คำแนะนำการลงทุน</p>
         </div>
       </div>
 
       <section class="section">
-        <div class="section-head"><h3 id="scanTitle">สแกนสัญญาณทั้งกลุ่ม</h3><p class="note">กรอบเวลา 1 วัน เปลี่ยนได้ในแต่ละช่อง</p></div>
+        <div class="section-head"><h3 id="scanTitle">ภาพรวมทั้งกลุ่ม</h3>
+          <div class="mini-seg" id="view"><button type="button" data-v="mini" aria-pressed="true">กราฟย่อ 3 เดือน</button><button type="button" data-v="ta" aria-pressed="false">สัญญาณซื้อขาย</button></div></div>
         <div class="scan" id="scan"></div>
       </section>
     </div>
@@ -231,37 +248,65 @@ widget($("tape"), "ticker-tape", {
   symbols: ALL.map((a) => ({ proName: a.pro, title: a.sym })),
   showSymbolLogo: true, isTransparent: true, displayMode: "adaptive", colorTheme: THEME, locale: "th_TH" });
 
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const RANGES = [["1M", "1 เดือน"], ["3M", "3 เดือน"], ["6M", "6 เดือน"], ["12M", "1 ปี"], ["60M", "5 ปี"]];
+const STYLES = [["3", "เส้น"], ["1", "แท่งเทียน"]];
+const opt = { range: "6M", style: "3", rsi: false };
+let current = null;
+
+function segButtons(host, items, key) {
+  host.replaceChildren(...items.map(([v, label]) => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.dataset.v = v;
+    b.setAttribute("aria-pressed", String(opt[key] === v));
+    b.addEventListener("click", () => {
+      opt[key] = v;
+      for (const x of host.children) x.setAttribute("aria-pressed", String(x.dataset.v === v));
+      drawChart();
+    });
+    return b;
+  }));
+}
+
+function drawChart() {
+  widget($("chart"), "advanced-chart", {
+    autosize: true, symbol: current, range: opt.range, timezone: "Asia/Bangkok", theme: THEME, style: opt.style,
+    locale: "th_TH", allow_symbol_change: false, hide_side_toolbar: true, hide_top_toolbar: true, hide_volume: true,
+    calendar: false, save_image: false, isTransparent: true,
+    backgroundColor: css("--surface"), gridColor: THEME === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.035)",
+    studies: opt.rsi ? ["RSI@tv-basicstudies"] : [], support_host: "https://www.tradingview.com" });
+}
+
 function select(pro) {
   const a = ALL.find((x) => x.pro === pro);
+  current = pro;
   logo(a, $("hLogo")); $("hSym").textContent = a.sym; $("hName").textContent = a.name; $("hLink").href = tvUrl(pro);
-  widget($("chart"), "advanced-chart", {
-    autosize: true, symbol: pro, interval: "D", timezone: "Asia/Bangkok", theme: THEME, style: "1",
-    locale: "th_TH", allow_symbol_change: true, hide_side_toolbar: true, calendar: false, isTransparent: true,
-    backgroundColor: THEME === "dark" ? "#212528" : "#fbfbfa", gridColor: THEME === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
-    studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"], support_host: "https://www.tradingview.com" });
+  drawChart();
   ta($("gauge"), pro);
   for (const b of $("list").querySelectorAll(".item")) b.setAttribute("aria-pressed", String(b.dataset.pro === pro));
   try { history.replaceState(null, "", "#" + a.sym); } catch {}
 }
 
+let view = "mini", group = "us";
+const mini = (host, symbol) => widget(host, "mini-symbol-overview", {
+  symbol, width: "100%", height: "100%", locale: "th_TH", dateRange: "3M", colorTheme: THEME, isTransparent: true,
+  autosize: true, chartOnly: false, noTimeScale: true, largeChartUrl: "",
+  trendLineColor: css("--accent"), underLineColor: css("--accent-soft"), underLineBottomColor: "rgba(0,0,0,0)" });
 const io = new IntersectionObserver((entries) => {
-  for (const e of entries) if (e.isIntersecting) { io.unobserve(e.target); ta(e.target, e.target.dataset.pro); }
+  for (const e of entries) if (e.isIntersecting) {
+    io.unobserve(e.target);
+    (view === "mini" ? mini : ta)(e.target, e.target.dataset.pro);
+  }
 }, { rootMargin: "300px" });
 
-function setGroup(g, pick) {
-  for (const t of $("tabs").children) t.setAttribute("aria-selected", String(t.dataset.g === g));
-  const items = ALL.filter((a) => a.g === g);
-  $("list").replaceChildren(...items.map((a) => {
-    const li = document.createElement("li");
-    const b = document.createElement("button"); b.type = "button"; b.className = "item"; b.dataset.pro = a.pro;
-    const t = document.createElement("span"); t.className = "t";
-    const s = document.createElement("span"); s.className = "sym"; s.textContent = a.sym;
-    const n = document.createElement("span"); n.className = "name"; n.textContent = a.name;
-    t.append(s, n); b.append(logo(a), t);
-    b.addEventListener("click", () => select(a.pro));
-    li.append(b); return li;
-  }));
-  $("scanTitle").textContent = "สแกนสัญญาณ" + GROUPS[g].title;
+for (const b of $("view").children) b.addEventListener("click", () => {
+  view = b.dataset.v;
+  for (const x of $("view").children) x.setAttribute("aria-pressed", String(x === b));
+  drawScan();
+});
+
+function drawScan() {
+  const items = ALL.filter((a) => a.g === group);
+  $("scan").classList.toggle("minis", view === "mini");
   io.disconnect();
   $("scan").replaceChildren(...items.map((a) => {
     const c = document.createElement("div"); c.className = "card";
@@ -275,6 +320,30 @@ function setGroup(g, pick) {
     body.innerHTML = '<div class="placeholder">กำลังโหลด</div>';
     c.append(bar, body); io.observe(body); return c;
   }));
+}
+
+segButtons($("range"), RANGES, "range");
+segButtons($("style"), STYLES, "style");
+$("rsi").addEventListener("click", () => {
+  opt.rsi = !opt.rsi; $("rsi").setAttribute("aria-pressed", String(opt.rsi)); drawChart();
+});
+
+function setGroup(g, pick) {
+  group = g;
+  for (const t of $("tabs").children) t.setAttribute("aria-selected", String(t.dataset.g === g));
+  const items = ALL.filter((a) => a.g === g);
+  $("list").replaceChildren(...items.map((a) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button"); b.type = "button"; b.className = "item"; b.dataset.pro = a.pro;
+    const t = document.createElement("span"); t.className = "t";
+    const s = document.createElement("span"); s.className = "sym"; s.textContent = a.sym;
+    const n = document.createElement("span"); n.className = "name"; n.textContent = a.name;
+    t.append(s, n); b.append(logo(a), t);
+    b.addEventListener("click", () => select(a.pro));
+    li.append(b); return li;
+  }));
+  $("scanTitle").textContent = "ภาพรวม" + GROUPS[g].title;
+  drawScan();
   select(pick || items[0].pro);
 }
 
