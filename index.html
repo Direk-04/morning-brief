@@ -64,6 +64,7 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
 @media (max-width: 920px) { .item { width: auto; white-space: nowrap; border: 1px solid var(--line); background: var(--surface); padding: 6px 12px 6px 6px } .item .name { display: none } }
 .logo { width: 30px; height: 30px; border-radius: 50%; background: var(--line); display: grid; place-items: center; overflow: hidden; flex: none; font: 500 11px var(--f-mono); color: var(--muted) }
 .logo img { width: 100%; height: 100%; object-fit: cover }
+.logo img.fav { object-fit: contain; padding: 4px; background: #fff }
 .item .t { display: grid; line-height: 1.3; min-width: 0 }
 .item .sym { font: 500 14px var(--f-mono) }
 .item .name { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
@@ -210,27 +211,27 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
 const LOGO = "https://s3-symbol-logo.tradingview.com/";
 const GROUPS = {
   us: { label: "US", icon: "country/US.svg", title: "หุ้นสหรัฐฯ", items: [
-    ["NASDAQ:GOOGL", "GOOGL", "Alphabet", "alphabet"],
-    ["NASDAQ:INTC", "INTC", "Intel", "intel"],
-    ["NYSE:DIS", "DIS", "Walt Disney", "walt-disney"],
-    ["NASDAQ:META", "META", "Meta Platforms", "meta-platforms"],
-    ["NASDAQ:AMD", "AMD", "Advanced Micro Devices", "advanced-micro-devices"],
-    ["NASDAQ:AAPL", "AAPL", "Apple", "apple"],
-    ["NASDAQ:MSFT", "MSFT", "Microsoft", "microsoft"],
-    ["NASDAQ:AMZN", "AMZN", "Amazon", "amazon"],
-    ["NASDAQ:NFLX", "NFLX", "Netflix", "netflix"]] },
+    ["NASDAQ:GOOGL", "GOOGL", "Alphabet", "alphabet", "abc.xyz"],
+    ["NASDAQ:INTC", "INTC", "Intel", "intel", "intel.com"],
+    ["NYSE:DIS", "DIS", "Walt Disney", "walt-disney", "disney.com"],
+    ["NASDAQ:META", "META", "Meta Platforms", "meta-platforms", "meta.com"],
+    ["NASDAQ:AMD", "AMD", "Advanced Micro Devices", "advanced-micro-devices", "amd.com"],
+    ["NASDAQ:AAPL", "AAPL", "Apple", "apple", "apple.com"],
+    ["NASDAQ:MSFT", "MSFT", "Microsoft", "microsoft", "microsoft.com"],
+    ["NASDAQ:AMZN", "AMZN", "Amazon", "amazon", "amazon.com"],
+    ["NASDAQ:NFLX", "NFLX", "Netflix", "netflix", "netflix.com"]] },
   th: { label: "ไทย", icon: "country/TH.svg", title: "หุ้นไทย", items: [
-    ["SET:KTB", "KTB", "ธนาคารกรุงไทย", "krung-thai-bank"],
-    ["SET:ADVANC", "ADVANC", "แอดวานซ์ อินโฟร์ เซอร์วิส", "advanced-info-service"],
-    ["SET:KBANK", "KBANK", "ธนาคารกสิกรไทย", "kasikornbank"],
-    ["SET:PTT", "PTT", "ปตท.", "ptt"],
-    ["SET:PTTGC", "PTTGC", "พีทีที โกลบอล เคมิคอล", "ptt-global-chemical"],
-    ["SET:SCB", "SCB", "เอสซีบี เอกซ์", "scb-x"],
-    ["SET:BBL", "BBL", "ธนาคารกรุงเทพ", "bangkok-bank"],
-    ["SET:PTTEP", "PTTEP", "ปตท. สำรวจและผลิตปิโตรเลียม", "ptt-exploration-and-production"],
-    ["SET:CPALL", "CPALL", "ซีพี ออลล์", "cp-all"],
-    ["SET:THAI", "THAI", "การบินไทย", "thai-airways-international"],
-    ["SET:STECON", "STECON", "สเตคอน กรุ๊ป", "sino-thai-engineering-and-construction"]] },
+    ["SET:KTB", "KTB", "ธนาคารกรุงไทย", "krung-thai-bank", "krungthai.com"],
+    ["SET:ADVANC", "ADVANC", "แอดวานซ์ อินโฟร์ เซอร์วิส", "advanced-info-service", "ais.th"],
+    ["SET:KBANK", "KBANK", "ธนาคารกสิกรไทย", "kasikornbank", "kasikornbank.com"],
+    ["SET:PTT", "PTT", "ปตท.", "ptt", "pttplc.com"],
+    ["SET:PTTGC", "PTTGC", "พีทีที โกลบอล เคมิคอล", "ptt-global-chemical", "pttgcgroup.com"],
+    ["SET:SCB", "SCB", "เอสซีบี เอกซ์", "scb-x", "scbx.com"],
+    ["SET:BBL", "BBL", "ธนาคารกรุงเทพ", "bangkok-bank", "bangkokbank.com"],
+    ["SET:PTTEP", "PTTEP", "ปตท. สำรวจและผลิตปิโตรเลียม", "ptt-exploration-and-production", "pttep.com"],
+    ["SET:CPALL", "CPALL", "ซีพี ออลล์", "cp-all", "cpall.co.th"],
+    ["SET:THAI", "THAI", "การบินไทย", "thai-airways-international", "thaiairways.com"],
+    ["SET:STECON", "STECON", "สเตคอน กรุ๊ป", "sino-thai-engineering-and-construction", "stecon.co.th"]] },
   cmd: { label: "ทอง", icon: "metal/gold.svg", title: "ทองคำ เงิน และค่าเงิน", items: [
     ["OANDA:XAUUSD", "XAUUSD", "ทองคำ Spot", "metal/gold"],
     ["OANDA:XAGUSD", "XAGUSD", "เงิน Spot", "metal/silver"],
@@ -238,13 +239,17 @@ const GROUPS = {
 };
 const THEME = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 const $ = (id) => document.getElementById(id);
-const ALL = Object.entries(GROUPS).flatMap(([g, x]) => x.items.map((i) => ({ g, pro: i[0], sym: i[1], name: i[2], logo: i[3] })));
+const ALL = Object.entries(GROUPS).flatMap(([g, x]) => x.items.map((i) => ({ g, pro: i[0], sym: i[1], name: i[2], logo: i[3], site: i[4] })));
 
+// Company logo: TradingView's logo first, then the company website's icon, else the ticker initials
 function logo(a, el = document.createElement("span")) {
   el.className = "logo"; el.replaceChildren(); el.textContent = a.sym.slice(0, 2);
-  const img = new Image(); img.alt = ""; img.loading = "lazy";
-  img.src = LOGO + a.logo + ".svg";
+  const srcs = [LOGO + a.logo + ".svg"];
+  if (a.site) srcs.push("https://www.google.com/s2/favicons?sz=128&domain=" + a.site);
+  const img = new Image(); img.alt = "";
   img.onload = () => el.replaceChildren(img);
+  img.onerror = () => { if (srcs.length) { img.className = "fav"; img.src = srcs.shift(); } };
+  img.src = srcs.shift();
   return el;
 }
 function icon(id, size = 14) {
