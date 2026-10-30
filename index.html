@@ -250,8 +250,8 @@ widget($("tape"), "ticker-tape", {
 
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const RANGES = [["1M", "1 เดือน"], ["3M", "3 เดือน"], ["6M", "6 เดือน"], ["12M", "1 ปี"], ["60M", "5 ปี"]];
-const STYLES = [["3", "เส้น"], ["1", "แท่งเทียน"]];
-const opt = { range: "6M", style: "3", rsi: false };
+const STYLES = [["9", "แท่งเทียน"], ["1", "แท่งทึบ"], ["3", "เส้น"]];
+const opt = { range: "3M", style: "9", rsi: false };
 let current = null;
 
 function segButtons(host, items, key) {
@@ -271,7 +271,14 @@ function drawChart() {
   widget($("chart"), "advanced-chart", {
     autosize: true, symbol: current, range: opt.range, timezone: "Asia/Bangkok", theme: THEME, style: opt.style,
     locale: "th_TH", allow_symbol_change: false, hide_side_toolbar: true, hide_top_toolbar: true, hide_volume: true,
-    calendar: false, save_image: false, isTransparent: true,
+    hide_legend: true, calendar: false, save_image: false, isTransparent: true,
+    overrides: {
+      "mainSeriesProperties.candleStyle.upColor": css("--up"), "mainSeriesProperties.candleStyle.downColor": css("--down"),
+      "mainSeriesProperties.candleStyle.borderUpColor": css("--up"), "mainSeriesProperties.candleStyle.borderDownColor": css("--down"),
+      "mainSeriesProperties.candleStyle.wickUpColor": css("--up"), "mainSeriesProperties.candleStyle.wickDownColor": css("--down"),
+      "mainSeriesProperties.hollowCandleStyle.upColor": css("--up"), "mainSeriesProperties.hollowCandleStyle.downColor": css("--down"),
+      "mainSeriesProperties.hollowCandleStyle.borderUpColor": css("--up"), "mainSeriesProperties.hollowCandleStyle.borderDownColor": css("--down"),
+      "mainSeriesProperties.hollowCandleStyle.wickUpColor": css("--up"), "mainSeriesProperties.hollowCandleStyle.wickDownColor": css("--down") },
     backgroundColor: css("--surface"), gridColor: THEME === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.035)",
     studies: opt.rsi ? ["RSI@tv-basicstudies"] : [], support_host: "https://www.tradingview.com" });
 }
