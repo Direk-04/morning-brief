@@ -126,6 +126,28 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
 .accumulate .badge { background: var(--accent-soft); color: var(--up) }
 .strong .badge { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn) }
 .avoid .badge { background: color-mix(in srgb, var(--down) 14%, transparent); color: var(--down) }
+/* History analysis table */
+.hist { display: grid; gap: 14px }
+.hist-filter { display: flex; gap: 6px; flex-wrap: wrap }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface) }
+table.ana { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 920px }
+.ana th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap }
+.ana td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle }
+.ana tr:last-child td { border-bottom: 0 }
+.ana tbody tr { cursor: pointer }
+.ana tbody tr:hover { background: var(--bg) }
+.ana .n { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right }
+.ana th.n { text-align: right }
+.ana .asset { display: flex; align-items: center; gap: 10px; font: 500 14px var(--f-mono) }
+.ana .asset .logo { width: 26px; height: 26px; font-size: 10px }
+.ana .pos { color: var(--up) } .ana .neg { color: var(--down) }
+.ana .why { color: var(--muted); font-size: 12.5px; line-height: 1.5; min-width: 260px }
+.ana .score { display: inline-grid; place-items: center; width: 34px; height: 22px; border-radius: 6px; font: 500 12px var(--f-mono); background: var(--bg) }
+.sig { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; background: var(--line); color: var(--muted) }
+.sig.accumulate, .sig.breakout { background: var(--accent-soft); color: var(--up) }
+.sig.overbought, .sig.rebound { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn) }
+.sig.downtrend { background: color-mix(in srgb, var(--down) 14%, transparent); color: var(--down) }
+.spark { display: block }
 .tradingview-widget-container, .tradingview-widget-container__widget { height: 100%; width: 100% }
 .tradingview-widget-copyright { display: none }
 </style>
@@ -157,6 +179,19 @@ aside { display: grid; gap: 14px; position: sticky; top: 16px }
     <div class="section-head"><h3 style="margin:0;font-size:17px;font-weight:600">จังหวะน่าสนใจ</h3><p class="note" id="picksTime"></p></div>
     <div class="picks-grid" id="picksGrid"></div>
     <p class="note">มุมมองจากข่าวและงบล่าสุดใน Morning Brief ไม่ใช่คำแนะนำการลงทุน เช็คเกจสัญญาณและราคาจริงก่อนซื้อทุกครั้ง</p>
+  </section>
+
+  <section class="hist" id="hist" hidden>
+    <div class="section-head">
+      <div><h3 style="margin:0;font-size:17px;font-weight:600">วิเคราะห์จากราคาย้อนหลัง 2 ปี</h3>
+        <p class="note" id="histTime"></p></div>
+      <div class="mini-seg hist-filter" id="histFilter"></div>
+    </div>
+    <div class="tablewrap"><table class="ana">
+      <thead><tr><th>สินทรัพย์</th><th class="n">ราคา</th><th>6 เดือน</th><th class="n">1 เดือน</th><th class="n">3 เดือน</th><th class="n">1 ปี</th>
+        <th class="n">RSI</th><th class="n">จากจุดสูงสุด</th><th class="n">แนวรับ / ต้าน</th><th>สัญญาณ</th><th class="n">คะแนน</th><th>เหตุผล</th></tr></thead>
+      <tbody id="histBody"></tbody></table></div>
+    <p class="note">คำนวณจากราคาปิดรายวันย้อนหลัง 2 ปี: เส้นค่าเฉลี่ย 50/200 วัน, RSI 14 วัน, แนวรับ/ต้านจากกรอบ 3 เดือน และระยะห่างจากจุดสูงสุด 52 สัปดาห์ อัปเดตอัตโนมัติวันละ 2 รอบ (หลังตลาดไทยปิดและหลังตลาด US ปิด) คะแนนสูง = ใกล้จังหวะเข้าที่สมเหตุสมผล ไม่ใช่คำแนะนำการลงทุน</p>
   </section>
 
   <div class="main">
@@ -410,6 +445,52 @@ fetch("picks.json", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).t
     return b;
   }));
   $("picks").hidden = false;
+}).catch(() => {});
+
+// History-based analysis produced daily by the GitHub Action (scripts/analyze.py)
+const DATA_URL = "https://raw.githubusercontent.com/Direk-04/morning-brief/main/data/analysis.json";
+let ana = [], histGroup = "all";
+const fmt = (v, d = 2) => v == null ? "–" : Number(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pctCell = (v) => { const td = document.createElement("td"); td.className = "n " + (v > 0 ? "pos" : v < 0 ? "neg" : ""); td.textContent = v == null ? "–" : (v > 0 ? "+" : "") + v.toFixed(1) + "%"; return td; };
+function spark(vals) {
+  const w = 110, h = 32, ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg"); svg.setAttribute("width", w); svg.setAttribute("height", h); svg.setAttribute("class", "spark");
+  const v = (vals || []).filter((x) => x != null); if (v.length < 2) return svg;
+  const lo = Math.min(...v), hi = Math.max(...v), sx = w / (v.length - 1), sy = (h - 4) / ((hi - lo) || 1);
+  const pts = v.map((y, i) => `${(i * sx).toFixed(1)},${(h - 2 - (y - lo) * sy).toFixed(1)}`).join(" ");
+  const pl = document.createElementNS(ns, "polyline"); pl.setAttribute("points", pts); pl.setAttribute("fill", "none");
+  pl.setAttribute("stroke", v[v.length - 1] >= v[0] ? css("--up") : css("--down")); pl.setAttribute("stroke-width", "1.5"); pl.setAttribute("stroke-linejoin", "round");
+  svg.append(pl); return svg;
+}
+function drawHist() {
+  const rows = ana.filter((x) => { const a = ALL.find((y) => y.sym === x.sym); return a && (histGroup === "all" || a.g === histGroup); });
+  $("histBody").replaceChildren(...rows.map((x) => {
+    const a = ALL.find((y) => y.sym === x.sym);
+    const tr = document.createElement("tr");
+    const td = (cls, txt) => { const c = document.createElement("td"); if (cls) c.className = cls; if (txt != null) c.textContent = txt; return c; };
+    const asset = td(); const box = document.createElement("div"); box.className = "asset"; box.append(logo(a), a.sym); asset.append(box);
+    const sp = td(); sp.append(spark(x.spark));
+    const sig = td(); const b = document.createElement("span"); b.className = "sig " + x.signal; b.textContent = x.signalLabel; sig.append(b);
+    const sc = td("n"); const sb = document.createElement("span"); sb.className = "score"; sb.textContent = x.score; sc.append(sb);
+    tr.append(asset, td("n", x.cur + fmt(x.price)), sp, pctCell(x.chg1m), pctCell(x.chg3m), pctCell(x.chg1y),
+      td("n", fmt(x.rsi, 0)), td("n", x.fromHigh == null ? "–" : x.fromHigh.toFixed(1) + "%"),
+      td("n", fmt(x.support) + " / " + fmt(x.resistance)), sig, sc, td("why", (x.reasons || []).join(" · ")));
+    tr.addEventListener("click", () => { setGroup(a.g, a.pro); document.querySelector(".main").scrollIntoView({ behavior: "smooth" }); });
+    return tr;
+  }));
+}
+fetch(DATA_URL, { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((d) => {
+  if (!d?.items?.length) return;
+  ana = d.items;
+  $("histTime").textContent = "ข้อมูลล่าสุด " + d.generated + " น." + (d.failed?.length ? " · ดึงไม่ได้: " + d.failed.join(", ") : "");
+  const groups = [["all", "ทั้งหมด"], ...Object.entries(GROUPS).map(([k, g]) => [k, g.label])];
+  $("histFilter").replaceChildren(...groups.map(([k, label]) => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.setAttribute("aria-pressed", String(k === histGroup));
+    b.addEventListener("click", () => { histGroup = k; for (const x of $("histFilter").children) x.setAttribute("aria-pressed", String(x === b)); drawHist(); });
+    return b;
+  }));
+  drawHist();
+  $("hist").hidden = false;
 }).catch(() => {});
 
 const want = location.hash.slice(1).toUpperCase();
