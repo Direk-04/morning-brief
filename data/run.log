@@ -307,17 +307,16 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/yfinance/utils.py:518: Pandas4Warning: The inplace keyword in DataFrame.rename is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   df.rename(columns={
-GOOGL: 502 rows from yahoo
-INTC: 502 rows from yahoo
-DIS: 502 rows from yahoo
-META: 502 rows from yahoo
-META news: none
-AMD: 502 rows from yahoo
-AAPL: 502 rows from yahoo
+GOOGL: 500 rows from yahoo
+INTC: 500 rows from yahoo
+DIS: 500 rows from yahoo
+META: 500 rows from yahoo
+AMD: 500 rows from yahoo
+AAPL: 500 rows from yahoo
 news item sample keys: ['uuid', 'title', 'publisher', 'link', 'providerPublishTime', 'type', 'thumbnail', 'relatedTickers'] []
-MSFT: 502 rows from yahoo
-AMZN: 502 rows from yahoo
-NFLX: 502 rows from yahoo
+MSFT: 500 rows from yahoo
+AMZN: 500 rows from yahoo
+NFLX: 500 rows from yahoo
 KTB: 484 rows from yahoo
 KTB.BK news: none
 ADVANC: 484 rows from yahoo
