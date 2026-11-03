@@ -307,25 +307,26 @@ See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace 
 /opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/yfinance/utils.py:518: Pandas4Warning: The inplace keyword in DataFrame.rename is deprecated and will be removed in a future version (PDEP-8).
 See https://pandas.pydata.org/docs/dev/whatsnew/v3.1.0.html#deprecation-inplace for more details.
   df.rename(columns={
-GOOGL: 500 rows from yahoo
+GOOGL: 501 rows from yahoo
 GOOGL news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
-INTC: 500 rows from yahoo
+INTC: 501 rows from yahoo
 INTC news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
-DIS: 500 rows from yahoo
+DIS: 501 rows from yahoo
 DIS news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
-META: 500 rows from yahoo
+META: 501 rows from yahoo
 META news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
-AMD: 500 rows from yahoo
+AMD: 501 rows from yahoo
 AMD news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
-AAPL: 500 rows from yahoo
+AAPL: 501 rows from yahoo
 AAPL news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
 news item sample keys: ['uuid', 'title', 'publisher', 'link', 'providerPublishTime', 'type', 'relatedTickers'] []
-MSFT: 500 rows from yahoo
+MSFT: 501 rows from yahoo
 MSFT news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
-AMZN: 500 rows from yahoo
+AMZN: 501 rows from yahoo
 AMZN news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
-NFLX: 500 rows from yahoo
+NFLX: 501 rows from yahoo
 NFLX news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
+NFLX news: none
 KTB: 482 rows from yahoo
 KTB.BK news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
 KTB.BK news: none
@@ -342,7 +343,7 @@ PTTGC: 482 rows from yahoo
 PTTGC.BK news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
 PTTGC.BK news: none
 SCB: 482 rows from yahoo
-SCB.BK news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
+SCB.BK news via ticker failed: IncompleteRead: Failed to perform, curl: (18) end of response with 665 bytes missing. See https://curl.se/libcurl/c/libcurl-errors.html first for more details.
 SCB.BK news: none
 BBL: 482 rows from yahoo
 BBL.BK news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
@@ -351,7 +352,7 @@ PTTEP: 482 rows from yahoo
 PTTEP.BK news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
 PTTEP.BK news: none
 CPALL: 482 rows from yahoo
-CPALL.BK news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
+CPALL.BK news via ticker failed: IncompleteRead: Failed to perform, curl: (18) end of response with 1965 bytes missing. See https://curl.se/libcurl/c/libcurl-errors.html first for more details.
 CPALL.BK news: none
 THAI: 482 rows from yahoo
 THAI.BK news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
@@ -359,9 +360,9 @@ THAI.BK news: none
 STECON: 482 rows from yahoo
 STECON.BK news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
 STECON.BK news: none
-XAUUSD: 502 rows from yahoo
+XAUUSD: 503 rows from yahoo
 GC=F news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
-XAGUSD: 502 rows from yahoo
+XAGUSD: 503 rows from yahoo
 SI=F news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
 USDTHB: 517 rows from yahoo
 THB=X news via ticker failed: YFDataException: *** YAHOO! FINANCE IS CURRENTLY DOWN! ***
