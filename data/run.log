@@ -1,13 +1,13 @@
-GOOGL: 500 rows from yahoo
-INTC: 500 rows from yahoo
-DIS: 500 rows from yahoo
-META: 500 rows from yahoo
-AMD: 500 rows from yahoo
-AAPL: 500 rows from yahoo
+GOOGL: 502 rows from yahoo
+INTC: 502 rows from yahoo
+DIS: 502 rows from yahoo
+META: 502 rows from yahoo
+AMD: 502 rows from yahoo
+AAPL: 502 rows from yahoo
 news item sample keys: ['id', 'content'] ['id', 'contentType', 'title', 'description', 'summary', 'pubDate', 'displayTime', 'isHosted', 'previewUrl', 'thumbnail', 'provider', 'canonicalUrl']
-MSFT: 500 rows from yahoo
-AMZN: 500 rows from yahoo
-NFLX: 500 rows from yahoo
+MSFT: 502 rows from yahoo
+AMZN: 502 rows from yahoo
+NFLX: 502 rows from yahoo
 KTB: 483 rows from yahoo
 ADVANC: 483 rows from yahoo
 KBANK: 483 rows from yahoo
@@ -24,7 +24,7 @@ THAI: 483 rows from yahoo
 THAI.BK news: none
 STECON: 483 rows from yahoo
 STECON.BK news: none
-XAUUSD: 503 rows from yahoo
-XAGUSD: 503 rows from yahoo
+XAUUSD: 504 rows from yahoo
+XAGUSD: 504 rows from yahoo
 USDTHB: 518 rows from yahoo
 wrote 23 assets, failed: []
