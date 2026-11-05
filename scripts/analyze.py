@@ -15,7 +15,7 @@ import pandas as pd
 WATCHLIST = [
     ("GOOGL", "GOOGL", "$"), ("INTC", "INTC", "$"), ("DIS", "DIS", "$"), ("META", "META", "$"),
     ("AMD", "AMD", "$"), ("AAPL", "AAPL", "$"), ("MSFT", "MSFT", "$"), ("AMZN", "AMZN", "$"),
-    ("NFLX", "NFLX", "$"),
+    ("NFLX", "NFLX", "$"), ("NVDA", "NVDA", "$"),
     ("KTB", "KTB.BK", "฿"), ("ADVANC", "ADVANC.BK", "฿"), ("KBANK", "KBANK.BK", "฿"), ("PTT", "PTT.BK", "฿"),
     ("PTTGC", "PTTGC.BK", "฿"), ("SCB", "SCB.BK", "฿"), ("BBL", "BBL.BK", "฿"), ("PTTEP", "PTTEP.BK", "฿"),
     ("CPALL", "CPALL.BK", "฿"), ("THAI", "THAI.BK", "฿"), ("STECON", "STECON.BK", "฿"),
