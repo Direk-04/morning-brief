@@ -8,6 +8,7 @@ news item sample keys: ['id', 'content'] ['id', 'contentType', 'title', 'descrip
 MSFT: 502 rows from yahoo
 AMZN: 502 rows from yahoo
 NFLX: 502 rows from yahoo
+NVDA: 502 rows from yahoo
 KTB: 483 rows from yahoo
 ADVANC: 483 rows from yahoo
 KBANK: 483 rows from yahoo
@@ -27,4 +28,4 @@ STECON.BK news: none
 XAUUSD: 504 rows from yahoo
 XAGUSD: 504 rows from yahoo
 USDTHB: 518 rows from yahoo
-wrote 23 assets, failed: []
+wrote 24 assets, failed: []
