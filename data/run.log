@@ -9,22 +9,22 @@ MSFT: 500 rows from yahoo
 AMZN: 500 rows from yahoo
 NFLX: 500 rows from yahoo
 NVDA: 500 rows from yahoo
-KTB: 481 rows from yahoo
-ADVANC: 481 rows from yahoo
-KBANK: 481 rows from yahoo
-PTT: 481 rows from yahoo
-PTTGC: 481 rows from yahoo
+KTB: 483 rows from yahoo
+ADVANC: 483 rows from yahoo
+KBANK: 483 rows from yahoo
+PTT: 483 rows from yahoo
+PTTGC: 483 rows from yahoo
 PTTGC.BK news: none
-SCB: 481 rows from yahoo
+SCB: 483 rows from yahoo
 SCB.BK news: none
-BBL: 481 rows from yahoo
-PTTEP: 481 rows from yahoo
-CPALL: 481 rows from yahoo
+BBL: 483 rows from yahoo
+PTTEP: 483 rows from yahoo
+CPALL: 483 rows from yahoo
 CPALL.BK news: none
-THAI: 481 rows from yahoo
-STECON: 481 rows from yahoo
+THAI: 483 rows from yahoo
+STECON: 483 rows from yahoo
 STECON.BK news: none
 XAUUSD: 502 rows from yahoo
 XAGUSD: 502 rows from yahoo
-USDTHB: 516 rows from yahoo
+USDTHB: 517 rows from yahoo
 wrote 24 assets, failed: []
