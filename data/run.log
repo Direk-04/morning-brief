@@ -1,28 +1,28 @@
-GOOGL: 502 rows from yahoo
-INTC: 502 rows from yahoo
-DIS: 502 rows from yahoo
-META: 502 rows from yahoo
-AMD: 502 rows from yahoo
-AAPL: 502 rows from yahoo
+GOOGL: 501 rows from yahoo
+INTC: 501 rows from yahoo
+DIS: 501 rows from yahoo
+META: 500 rows from yahoo
+AMD: 501 rows from yahoo
+AAPL: 501 rows from yahoo
 news item sample keys: ['id', 'content'] ['id', 'contentType', 'title', 'description', 'summary', 'pubDate', 'displayTime', 'isHosted', 'previewUrl', 'thumbnail', 'provider', 'canonicalUrl']
-MSFT: 502 rows from yahoo
-AMZN: 502 rows from yahoo
-NFLX: 502 rows from yahoo
-NVDA: 502 rows from yahoo
-KTB: 483 rows from yahoo
-ADVANC: 483 rows from yahoo
-KBANK: 483 rows from yahoo
-PTT: 483 rows from yahoo
-PTTGC: 483 rows from yahoo
+MSFT: 501 rows from yahoo
+AMZN: 501 rows from yahoo
+NFLX: 501 rows from yahoo
+NVDA: 501 rows from yahoo
+KTB: 484 rows from yahoo
+ADVANC: 484 rows from yahoo
+KBANK: 484 rows from yahoo
+PTT: 484 rows from yahoo
+PTTGC: 484 rows from yahoo
 PTTGC.BK news: none
-SCB: 483 rows from yahoo
+SCB: 484 rows from yahoo
 SCB.BK news: none
-BBL: 483 rows from yahoo
-PTTEP: 483 rows from yahoo
-CPALL: 483 rows from yahoo
+BBL: 484 rows from yahoo
+PTTEP: 484 rows from yahoo
+CPALL: 484 rows from yahoo
 CPALL.BK news: none
-THAI: 483 rows from yahoo
-STECON: 483 rows from yahoo
+THAI: 484 rows from yahoo
+STECON: 484 rows from yahoo
 STECON.BK news: none
 XAUUSD: 504 rows from yahoo
 XAGUSD: 504 rows from yahoo
